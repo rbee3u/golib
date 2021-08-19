@@ -1,0 +1,12 @@
+linters:
+  disable-all: true
+  enable:
+  {{- range .LinterList }}
+    - {{ . }}
+  {{- end }}
+
+run:
+  tests: false
+  skip-dirs:
+    - stl/collections/associative/avl
+    - stl/collections/associative/rb
