@@ -1,44 +1,28 @@
 package initial
 
-import (
-	"github.com/rbee3u/golib/stl/constraints"
-	"github.com/rbee3u/golib/stl/iterators"
-	"github.com/rbee3u/golib/stl/types"
-)
+import "github.com/rbee3u/golib/stl/constraints"
 
-var _ iterators.InputIterator = Iterator{}
+var _ = constraints.IsForwardIterator[Iterator[int], int]()
 
-type Iterator struct {
-	l *List
-	n types.Size
+type Iterator[T any] struct {
+	l *List[T]
+	n int
 }
 
-func (i Iterator) Clone() constraints.Cloneable {
-	return i.ImplClone()
-}
-
-func (i Iterator) ImplClone() Iterator {
+func (i Iterator[T]) Clone() Iterator[T] {
 	return i
 }
 
-func (i Iterator) Next() constraints.Incrementable {
-	return i.ImplNext()
-}
-
-func (i Iterator) ImplNext() Iterator {
+func (i Iterator[T]) Next() Iterator[T] {
 	i.n++
 
 	return i
 }
 
-func (i Iterator) Equal(other constraints.EqualityComparable) bool {
-	return i.ImplEqual(other.(Iterator))
-}
-
-func (i Iterator) ImplEqual(other Iterator) bool {
+func (i Iterator[T]) Equal(other Iterator[T]) bool {
 	return i == other
 }
 
-func (i Iterator) Read() types.Data {
-	return i.l.slice[i.n]
+func (i Iterator[T]) Read() T {
+	return i.l.items[i.n]
 }

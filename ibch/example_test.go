@@ -7,7 +7,7 @@ import (
 )
 
 func Example() {
-	ibCh := ibch.New()
+	ibCh := ibch.New[int]()
 
 	for i := 0; i < 5; i++ {
 		ibCh.SendCh() <- i

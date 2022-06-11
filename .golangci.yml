@@ -2,19 +2,27 @@ linters:
   disable-all: true
   enable:
     - asciicheck
+    - bidichk
     - bodyclose
+    - containedctx
+    - contextcheck
     - cyclop
     - deadcode
+    - decorder
     - depguard
     - dogsled
     - dupl
     - durationcheck
     - errcheck
+    - errchkjson
     - errname
     - errorlint
+    - execinquery
     - exhaustive
+    - exhaustruct
     - exportloopref
     - forbidigo
+    - forcetypeassert
     - funlen
     - gci
     - gochecknoglobals
@@ -30,24 +38,31 @@ linters:
     - gofumpt
     - goheader
     - goimports
+    - gomnd
     - gomoddirectives
     - gomodguard
     - goprintffuncname
     - gosec
     - gosimple
     - govet
+    - grouper
     - ifshort
     - importas
     - ineffassign
+    - ireturn
     - lll
+    - maintidx
     - makezero
     - misspell
     - nakedret
     - nestif
     - nilerr
+    - nilnil
     - nlreturn
     - noctx
     - nolintlint
+    - nonamedreturns
+    - nosprintfhostport
     - paralleltest
     - prealloc
     - predeclared
@@ -59,6 +74,7 @@ linters:
     - structcheck
     - stylecheck
     - tagliatelle
+    - tenv
     - testpackage
     - thelper
     - tparallel
@@ -67,6 +83,7 @@ linters:
     - unparam
     - unused
     - varcheck
+    - varnamelen
     - wastedassign
     - whitespace
     - wrapcheck
@@ -74,6 +91,19 @@ linters:
 
 run:
   tests: false
-  skip-dirs:
-    - stl/collections/associative/avl
-    - stl/collections/associative/rb
+
+issues:
+  exclude-rules:
+    - path: \.go
+      linters:
+        - cyclop
+        - dupl
+        - exhaustruct
+        - forcetypeassert
+        - gomnd
+        - ireturn
+        - nestif
+        - varnamelen
+    - linters:
+        - revive
+      text: "receiver-naming:"

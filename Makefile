@@ -32,11 +32,7 @@ memout:
 	go tool pprof -http=: mem.out
 
 lint:
-	golangci-config-generator
 	golangci-lint run
 
-install-gcg:
-	go install github.com/rbee3u/golangci-config-generator/cmd/golangci-config-generator@latest
-
 install-lint:
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.42.1
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.46.2

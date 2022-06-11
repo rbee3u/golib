@@ -50,8 +50,8 @@ func ExampleLoader() {
 
 func ExampleExpiration() {
 	const (
-		expiration       = 30 * time.Millisecond
-		doubleExpiration = 60 * time.Millisecond
+		expiration       = 300 * time.Millisecond
+		doubleExpiration = 600 * time.Millisecond
 	)
 
 	fmt.Println("Scene: default expiration only")

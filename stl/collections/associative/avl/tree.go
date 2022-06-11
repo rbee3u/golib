@@ -1,14 +1,10 @@
 package avl
 
-import (
-	"github.com/rbee3u/golib/stl/types"
-)
-
-type Tree struct {
-	sentinel node
-	start    *node
-	size     types.Size
-	less     types.BinaryPredicate
+type Tree[T any] struct {
+	sentinel node[T]
+	start    *node[T]
+	size     int
+	less     func(T, T) bool
 }
 
 const (
@@ -17,46 +13,46 @@ const (
 	rightHeavy = +1
 )
 
-type node struct {
-	parent *node
-	left   *node
-	right  *node
+type node[T any] struct {
+	parent *node[T]
+	left   *node[T]
+	right  *node[T]
 	extra  int8
-	data   types.Data
+	data   T
 }
 
-func New(less types.BinaryPredicate) *Tree {
-	t := &Tree{less: less}
+func New[T any](less func(T, T) bool) *Tree[T] {
+	t := &Tree[T]{less: less}
 	t.start = &t.sentinel
 
 	return t
 }
 
-func (t *Tree) Size() types.Size {
+func (t *Tree[T]) Size() int {
 	return t.size
 }
 
-func (t *Tree) Empty() bool {
+func (t *Tree[T]) Empty() bool {
 	return t.Size() == 0
 }
 
-func (t *Tree) Begin() Iterator {
-	return Iterator{n: t.start}
+func (t *Tree[T]) Begin() Iterator[T] {
+	return Iterator[T]{n: t.start}
 }
 
-func (t *Tree) End() Iterator {
-	return Iterator{n: &t.sentinel}
+func (t *Tree[T]) End() Iterator[T] {
+	return Iterator[T]{n: &t.sentinel}
 }
 
-func (t *Tree) ReverseBegin() Iterator {
-	return Iterator{n: &t.sentinel}
+func (t *Tree[T]) ReverseBegin() Iterator[T] {
+	return Iterator[T]{n: &t.sentinel}
 }
 
-func (t *Tree) ReverseEnd() Iterator {
-	return Iterator{n: t.start}
+func (t *Tree[T]) ReverseEnd() Iterator[T] {
+	return Iterator[T]{n: t.start}
 }
 
-func (t *Tree) CountUnique(data types.Data) types.Size {
+func (t *Tree[T]) CountUnique(data T) int {
 	x := t.LowerBound(data)
 	if x != t.End() && !t.less(data, x.Read()) {
 		return 1
@@ -65,18 +61,17 @@ func (t *Tree) CountUnique(data types.Data) types.Size {
 	return 0
 }
 
-func (t *Tree) CountMulti(data types.Data) (c types.Size) {
-	x, y := t.LowerBound(data), t.UpperBound(data)
-	for x != y {
-		c++
+func (t *Tree[T]) CountMulti(data T) int {
+	var c int
 
-		x = x.ImplNext()
+	for x, y := t.LowerBound(data), t.UpperBound(data); x != y; x = x.Next() {
+		c++
 	}
 
 	return c
 }
 
-func (t *Tree) Find(data types.Data) Iterator {
+func (t *Tree[T]) Find(data T) Iterator[T] {
 	x := t.LowerBound(data)
 	if x != t.End() && !t.less(data, x.Read()) {
 		return x
@@ -85,7 +80,7 @@ func (t *Tree) Find(data types.Data) Iterator {
 	return t.End()
 }
 
-func (t *Tree) Contains(data types.Data) bool {
+func (t *Tree[T]) Contains(data T) bool {
 	x := t.LowerBound(data)
 	if x != t.End() && !t.less(data, x.Read()) {
 		return true
@@ -94,24 +89,24 @@ func (t *Tree) Contains(data types.Data) bool {
 	return false
 }
 
-func (t *Tree) EqualRangeUnique(data types.Data) (Iterator, Iterator) {
+func (t *Tree[T]) EqualRangeUnique(data T) (Iterator[T], Iterator[T]) {
 	x := t.LowerBound(data)
 	if x != t.End() && !t.less(data, x.Read()) {
-		return x, x.ImplNext()
+		return x, x.Next()
 	}
 
 	return x, x
 }
 
-func (t *Tree) EqualRangeMulti(data types.Data) (Iterator, Iterator) {
+func (t *Tree[T]) EqualRangeMulti(data T) (Iterator[T], Iterator[T]) {
 	return t.LowerBound(data), t.UpperBound(data)
 }
 
-func (t *Tree) LowerBound(data types.Data) Iterator {
-	return Iterator{n: t.lowerBound(data)}
+func (t *Tree[T]) LowerBound(data T) Iterator[T] {
+	return Iterator[T]{n: t.lowerBound(data)}
 }
 
-func (t *Tree) lowerBound(data types.Data) *node {
+func (t *Tree[T]) lowerBound(data T) *node[T] {
 	x := &t.sentinel
 
 	for y := x.left; y != nil; {
@@ -126,11 +121,11 @@ func (t *Tree) lowerBound(data types.Data) *node {
 	return x
 }
 
-func (t *Tree) UpperBound(data types.Data) Iterator {
-	return Iterator{n: t.upperBound(data)}
+func (t *Tree[T]) UpperBound(data T) Iterator[T] {
+	return Iterator[T]{n: t.upperBound(data)}
 }
 
-func (t *Tree) upperBound(data types.Data) *node {
+func (t *Tree[T]) upperBound(data T) *node[T] {
 	x := &t.sentinel
 
 	for y := x.left; y != nil; {
@@ -145,32 +140,32 @@ func (t *Tree) upperBound(data types.Data) *node {
 	return x
 }
 
-func (t *Tree) Clear() {
+func (t *Tree[T]) Clear() {
 	t.sentinel.left = nil
 	t.start = &t.sentinel
 	t.size = 0
 }
 
-func (t *Tree) InsertUnique(v types.Data) (Iterator, bool) {
-	lb := t.LowerBound(v)
-	if lb != t.End() && !t.less(v, lb.Read()) {
+func (t *Tree[T]) InsertUnique(data T) (Iterator[T], bool) {
+	lb := t.LowerBound(data)
+	if lb != t.End() && !t.less(data, lb.Read()) {
 		return t.End(), false
 	}
 
-	z := &node{data: v}
+	z := &node[T]{data: data}
 	t.insert(z)
 
-	return Iterator{n: z}, true
+	return Iterator[T]{n: z}, true
 }
 
-func (t *Tree) InsertMulti(v types.Data) Iterator {
-	z := &node{data: v}
+func (t *Tree[T]) InsertMulti(data T) Iterator[T] {
+	z := &node[T]{data: data}
 	t.insert(z)
 
-	return Iterator{n: z}
+	return Iterator[T]{n: z}
 }
 
-func (t *Tree) insert(z *node) {
+func (t *Tree[T]) insert(z *node[T]) {
 	z.extra = balanced
 	z.parent, z.left, z.right = nil, nil, nil
 	x, childIsLeft := &t.sentinel, true
@@ -200,7 +195,7 @@ func (t *Tree) insert(z *node) {
 	t.size++
 }
 
-func (t *Tree) balanceAfterInsert(x *node, childIsLeft bool) {
+func (t *Tree[T]) balanceAfterInsert(x *node[T], childIsLeft bool) {
 	for ; x != &t.sentinel; x = x.parent {
 		if !childIsLeft {
 			switch x.extra {
@@ -242,14 +237,14 @@ func (t *Tree) balanceAfterInsert(x *node, childIsLeft bool) {
 	}
 }
 
-func (t *Tree) Delete(i Iterator) Iterator {
-	r := i.ImplNext()
+func (t *Tree[T]) Delete(i Iterator[T]) Iterator[T] {
+	r := i.Next()
 	t.delete(i.n)
 
 	return r
 }
 
-func (t *Tree) delete(z *node) {
+func (t *Tree[T]) delete(z *node[T]) {
 	if t.start == z {
 		t.start = successor(z)
 	}
@@ -299,7 +294,7 @@ func (t *Tree) delete(z *node) {
 	t.size--
 }
 
-func (t *Tree) balanceAfterDelete(x *node, childIsLeft bool) {
+func (t *Tree[T]) balanceAfterDelete(x *node[T], childIsLeft bool) {
 	for ; x != &t.sentinel; x = x.parent {
 		if childIsLeft {
 			switch x.extra {
@@ -349,7 +344,7 @@ func (t *Tree) balanceAfterDelete(x *node, childIsLeft bool) {
 	}
 }
 
-func rotateLeft(x *node) {
+func rotateLeft[T any](x *node[T]) {
 	z := x.right
 	x.right = z.left
 
@@ -375,7 +370,7 @@ func rotateLeft(x *node) {
 	}
 }
 
-func rotateRight(x *node) {
+func rotateRight[T any](x *node[T]) {
 	z := x.left
 	x.left = z.right
 
@@ -401,7 +396,7 @@ func rotateRight(x *node) {
 	}
 }
 
-func rotateRightLeft(x *node) {
+func rotateRightLeft[T any](x *node[T]) {
 	z := x.right
 	y := z.left
 	z.left = y.right
@@ -439,7 +434,7 @@ func rotateRightLeft(x *node) {
 	}
 }
 
-func rotateLeftRight(x *node) {
+func rotateLeftRight[T any](x *node[T]) {
 	z := x.left
 	y := z.right
 	z.right = y.left
@@ -477,7 +472,7 @@ func rotateLeftRight(x *node) {
 	}
 }
 
-func transplant(u *node, v *node) {
+func transplant[T any](u *node[T], v *node[T]) {
 	if u == u.parent.left {
 		u.parent.left = v
 	} else {
@@ -489,7 +484,7 @@ func transplant(u *node, v *node) {
 	}
 }
 
-func minimum(x *node) *node {
+func minimum[T any](x *node[T]) *node[T] {
 	for x.left != nil {
 		x = x.left
 	}
@@ -497,7 +492,7 @@ func minimum(x *node) *node {
 	return x
 }
 
-func maximum(x *node) *node {
+func maximum[T any](x *node[T]) *node[T] {
 	for x.right != nil {
 		x = x.right
 	}
@@ -505,7 +500,7 @@ func maximum(x *node) *node {
 	return x
 }
 
-func successor(x *node) *node {
+func successor[T any](x *node[T]) *node[T] {
 	if x.right != nil {
 		return minimum(x.right)
 	}
@@ -517,7 +512,7 @@ func successor(x *node) *node {
 	return x.parent
 }
 
-func predecessor(x *node) *node {
+func predecessor[T any](x *node[T]) *node[T] {
 	if x.left != nil {
 		return maximum(x.left)
 	}

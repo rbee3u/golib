@@ -3,7 +3,6 @@ package doubly_test
 import (
 	"testing"
 
-	"github.com/rbee3u/golib/stl/collections/sequence/doubly"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,7 +22,7 @@ func BenchmarkIterator_Write(b *testing.B) {
 
 func TestIterator_Clone(t *testing.T) {
 	i := newIterator()
-	j := i.Clone().(doubly.Iterator)
+	j := i.Clone()
 	assert.True(t, &i != &j)
 	assert.Equal(t, 0, i.Read())
 	assert.Equal(t, 0, j.Read())
@@ -41,7 +40,7 @@ func BenchmarkIterator_Clone(b *testing.B) {
 
 func TestIterator_ImplClone(t *testing.T) {
 	i := newIterator()
-	j := i.ImplClone()
+	j := i.Clone()
 	assert.True(t, &i != &j)
 	assert.Equal(t, 0, i.Read())
 	assert.Equal(t, 0, j.Read())
@@ -53,7 +52,7 @@ func TestIterator_ImplClone(t *testing.T) {
 func BenchmarkIterator_ImplClone(b *testing.B) {
 	i := newIterator()
 	for n := 0; n < b.N; n++ {
-		_ = i.ImplClone()
+		_ = i.Clone()
 	}
 }
 
@@ -63,9 +62,9 @@ func TestIterator_Next(t *testing.T) {
 	l.PushBack(2)
 	i := l.Begin()
 	assert.Equal(t, 1, i.Read())
-	i = i.Next().(doubly.Iterator)
+	i = i.Next()
 	assert.Equal(t, 2, i.Read())
-	i = i.Next().(doubly.Iterator)
+	i = i.Next()
 	assert.Equal(t, l.End(), i)
 }
 
@@ -82,16 +81,16 @@ func TestIterator_ImplNext(t *testing.T) {
 	l.PushBack(2)
 	i := l.Begin()
 	assert.Equal(t, 1, i.Read())
-	i = i.ImplNext()
+	i = i.Next()
 	assert.Equal(t, 2, i.Read())
-	i = i.ImplNext()
+	i = i.Next()
 	assert.Equal(t, l.End(), i)
 }
 
 func BenchmarkIterator_ImplNext(b *testing.B) {
 	i := newIterator()
 	for n := 0; n < b.N; n++ {
-		_ = i.ImplNext()
+		_ = i.Next()
 	}
 }
 
@@ -111,15 +110,15 @@ func BenchmarkIterator_Equal(b *testing.B) {
 
 func TestIterator_ImplEqual(t *testing.T) {
 	i := newIterator()
-	assert.True(t, i.ImplEqual(i))
+	assert.True(t, i.Equal(i))
 	j := newIterator()
-	assert.False(t, i.ImplEqual(j))
+	assert.False(t, i.Equal(j))
 }
 
 func BenchmarkIterator_ImplEqual(b *testing.B) {
 	i := newIterator()
 	for n := 0; n < b.N; n++ {
-		_ = i.ImplEqual(i)
+		_ = i.Equal(i)
 	}
 }
 
@@ -142,9 +141,9 @@ func TestIterator_Prev(t *testing.T) {
 	l.PushBack(2)
 	i := l.ReverseBegin()
 	assert.Equal(t, 2, i.Read())
-	i = i.Prev().(doubly.Iterator)
+	i = i.Prev()
 	assert.Equal(t, 1, i.Read())
-	i = i.Prev().(doubly.Iterator)
+	i = i.Prev()
 	assert.Equal(t, l.ReverseEnd(), i)
 }
 
@@ -161,15 +160,15 @@ func TestIterator_ImplPrev(t *testing.T) {
 	l.PushBack(2)
 	i := l.ReverseBegin()
 	assert.Equal(t, 2, i.Read())
-	i = i.ImplPrev()
+	i = i.Prev()
 	assert.Equal(t, 1, i.Read())
-	i = i.ImplPrev()
+	i = i.Prev()
 	assert.Equal(t, l.ReverseEnd(), i)
 }
 
 func BenchmarkIterator_ImplPrev(b *testing.B) {
 	i := newIterator()
 	for n := 0; n < b.N; n++ {
-		_ = i.ImplPrev()
+		_ = i.Prev()
 	}
 }

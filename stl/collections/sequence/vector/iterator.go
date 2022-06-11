@@ -1,88 +1,56 @@
 package vector
 
-import (
-	"github.com/rbee3u/golib/stl/constraints"
-	"github.com/rbee3u/golib/stl/iterators"
-	"github.com/rbee3u/golib/stl/types"
-)
+import "github.com/rbee3u/golib/stl/constraints"
 
-var _ iterators.RandomAccessIterator = Iterator{}
+var _ = constraints.IsMutableRandomAccessIterator[Iterator[int], int]()
 
-type Iterator struct {
-	l *List
-	n types.Size
+type Iterator[T any] struct {
+	l *List[T]
+	n int
 }
 
-func (i Iterator) Write(data types.Data) {
+func (i Iterator[T]) Write(data T) {
 	i.l.slice[i.n] = data
 }
 
-func (i Iterator) Clone() constraints.Cloneable {
-	return i.ImplClone()
-}
-
-func (i Iterator) ImplClone() Iterator {
+func (i Iterator[T]) Clone() Iterator[T] {
 	return i
 }
 
-func (i Iterator) Next() constraints.Incrementable {
-	return i.ImplNext()
-}
-
-func (i Iterator) ImplNext() Iterator {
+func (i Iterator[T]) Next() Iterator[T] {
 	i.n++
 
 	return i
 }
 
-func (i Iterator) Equal(other constraints.EqualityComparable) bool {
-	return i.ImplEqual(other.(Iterator))
-}
-
-func (i Iterator) ImplEqual(other Iterator) bool {
+func (i Iterator[T]) Equal(other Iterator[T]) bool {
 	return i == other
 }
 
-func (i Iterator) Read() types.Data {
+func (i Iterator[T]) Read() T {
 	return i.l.slice[i.n]
 }
 
-func (i Iterator) Prev() constraints.Decrementable {
-	return i.ImplPrev()
-}
-
-func (i Iterator) ImplPrev() Iterator {
+func (i Iterator[T]) Prev() Iterator[T] {
 	i.n--
 
 	return i
 }
 
-func (i Iterator) Less(other constraints.LessThanComparable) bool {
-	return i.ImplLess(other.(Iterator))
-}
-
-func (i Iterator) ImplLess(other Iterator) bool {
+func (i Iterator[T]) Less(other Iterator[T]) bool {
 	return i.n < other.n
 }
 
-func (i Iterator) At(diff types.Size) types.Data {
-	return i.l.slice[i.n+diff]
-}
-
-func (i Iterator) Advance(diff types.Size) iterators.RandomAccessIterator {
-	return i.ImplAdvance(diff)
-}
-
-func (i Iterator) ImplAdvance(diff types.Size) Iterator {
-	i.n += diff
+func (i Iterator[T]) Advance(offset int) Iterator[T] {
+	i.n += offset
 
 	return i
 }
 
-func (i Iterator) Distance(other iterators.RandomAccessIterator) types.Size {
-	return i.ImplDistance(other.(Iterator))
+func (i Iterator[T]) At(offset int) T {
+	return i.l.slice[i.n+offset]
 }
 
-func (i Iterator) ImplDistance(other Iterator) types.Size {
+func (i Iterator[T]) Distance(other Iterator[T]) int {
 	return other.n - i.n
 }

@@ -140,16 +140,22 @@ func (bf *BloomFilter) ContainsWithoutLock(item []byte) bool {
 	return true
 }
 
-type bitset []uint8
+type bitset []uint
+
+const (
+	word32 = 32
+	word64 = 64
+	word   = word32 << (^uint(0) >> (word64 - 1))
+)
 
 func newBitset(m uint64) bitset {
-	return make(bitset, (m+8-1)/8)
+	return make(bitset, (m+word-1)/word)
 }
 
 func (b bitset) mark(p uint64) {
-	b[p/8] |= 1 << (p % 8)
+	b[p/word] |= 1 << (p % word)
 }
 
 func (b bitset) test(p uint64) bool {
-	return b[p/8]&(1<<(p%8)) == 0
+	return b[p/word]&(1<<(p%word)) == 0
 }

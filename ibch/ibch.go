@@ -6,18 +6,18 @@ import (
 
 // An IBCh represents a channel with infinite buffer, which consists of a
 // sendCh and a recvCh, the sendCh for sending and the recvCh for receiving.
-type IBCh struct {
+type IBCh[T any] struct {
 	// The sendCh is a channel which used to send data.
-	sendCh chan interface{}
+	sendCh chan T
 	// The recvCh is a channel which used to receive data.
-	recvCh chan interface{}
+	recvCh chan T
 }
 
 // New creates an IBCh.
-func New() *IBCh {
-	ibCh := &IBCh{
-		sendCh: make(chan interface{}),
-		recvCh: make(chan interface{}),
+func New[T any]() *IBCh[T] {
+	ibCh := &IBCh[T]{
+		sendCh: make(chan T),
+		recvCh: make(chan T),
 	}
 
 	go ibCh.loop()
@@ -26,22 +26,22 @@ func New() *IBCh {
 }
 
 // SendCh returns the sendCh.
-func (ibCh *IBCh) SendCh() chan<- interface{} {
+func (ibCh *IBCh[T]) SendCh() chan<- T {
 	return ibCh.sendCh
 }
 
 // RecvCh returns the recvCh.
-func (ibCh *IBCh) RecvCh() <-chan interface{} {
+func (ibCh *IBCh[T]) RecvCh() <-chan T {
 	return ibCh.recvCh
 }
 
 // Close will close the whole ibCh by closing the sendCh.
-func (ibCh *IBCh) Close() {
+func (ibCh *IBCh[T]) Close() {
 	close(ibCh.sendCh)
 }
 
-func (ibCh *IBCh) loop() {
-	q := newQueue()
+func (ibCh *IBCh[T]) loop() {
+	q := newQueue[T]()
 
 	for {
 		if q.empty() {
@@ -73,35 +73,33 @@ exit:
 	close(ibCh.recvCh)
 }
 
-type queue struct {
+type queue[T any] struct {
 	pool sync.Pool
-	head *node
-	tail *node
+	head *node[T]
+	tail *node[T]
 }
 
-func newQueue() *queue {
-	var q queue
-	q.pool.New = func() interface{} {
-		return new(node)
-	}
+func newQueue[T any]() *queue[T] {
+	var q queue[T]
+	q.pool.New = func() any { return new(node[T]) }
 
 	return &q
 }
 
-type node struct {
-	next *node
-	data interface{}
+type node[T any] struct {
+	next *node[T]
+	data T
 }
 
-func (q *queue) empty() bool {
+func (q *queue[T]) empty() bool {
 	return q.head == nil
 }
 
-func (q *queue) front() interface{} {
+func (q *queue[T]) front() T {
 	return q.head.data
 }
 
-func (q *queue) popFront() {
+func (q *queue[T]) popFront() {
 	n := q.head
 
 	q.head = n.next
@@ -109,13 +107,12 @@ func (q *queue) popFront() {
 		q.tail = nil
 	}
 
-	n.next = nil
-	n.data = nil
+	*n = node[T]{}
 	q.pool.Put(n)
 }
 
-func (q *queue) pushBack(data interface{}) {
-	n := q.pool.Get().(*node)
+func (q *queue[T]) pushBack(data T) {
+	n := q.pool.Get().(*node[T])
 	n.data = data
 
 	if q.head == nil {

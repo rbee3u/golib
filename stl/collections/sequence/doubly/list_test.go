@@ -180,7 +180,7 @@ func BenchmarkList_Begin(b *testing.B) {
 func TestList_End(t *testing.T) {
 	l := newList()
 	l.PushFront(1)
-	end := l.Begin().ImplNext()
+	end := l.Begin().Next()
 	assert.True(t, l.End().Equal(end))
 }
 
@@ -207,7 +207,7 @@ func BenchmarkList_ReverseBegin(b *testing.B) {
 func TestList_ReverseEnd(t *testing.T) {
 	l := newList()
 	l.PushBack(1)
-	end := l.ReverseBegin().ImplPrev()
+	end := l.ReverseBegin().Prev()
 	assert.True(t, l.ReverseEnd().Equal(end))
 }
 
@@ -270,4 +270,3 @@ func BenchmarkList_Erase(b *testing.B) {
 		_ = l.Erase(i)
 	}
 }
-

@@ -2,55 +2,37 @@ package avl
 
 import (
 	"github.com/rbee3u/golib/stl/constraints"
-	"github.com/rbee3u/golib/stl/iterators"
-	"github.com/rbee3u/golib/stl/types"
 )
 
-var _ iterators.MutableBidirectionalIterator = Iterator{}
+var _ = constraints.IsMutableBidirectionalIterator[Iterator[int], int]()
 
-type Iterator struct {
-	n *node
+type Iterator[T any] struct {
+	n *node[T]
 }
 
-func (i Iterator) Write(data types.Data) {
+func (i Iterator[T]) Write(data T) {
 	i.n.data = data
 }
 
-func (i Iterator) Clone() constraints.Cloneable {
-	return i.ImplClone()
-}
-
-func (i Iterator) ImplClone() Iterator {
+func (i Iterator[T]) Clone() Iterator[T] {
 	return i
 }
 
-func (i Iterator) Next() constraints.Incrementable {
-	return i.ImplNext()
-}
-
-func (i Iterator) ImplNext() Iterator {
+func (i Iterator[T]) Next() Iterator[T] {
 	i.n = successor(i.n)
 
 	return i
 }
 
-func (i Iterator) Equal(other constraints.EqualityComparable) bool {
-	return i.ImplEqual(other.(Iterator))
-}
-
-func (i Iterator) ImplEqual(other Iterator) bool {
+func (i Iterator[T]) Equal(other Iterator[T]) bool {
 	return i == other
 }
 
-func (i Iterator) Read() types.Data {
+func (i Iterator[T]) Read() T {
 	return i.n.data
 }
 
-func (i Iterator) Prev() constraints.Decrementable {
-	return i.ImplPrev()
-}
-
-func (i Iterator) ImplPrev() Iterator {
+func (i Iterator[T]) Prev() Iterator[T] {
 	i.n = predecessor(i.n)
 
 	return i

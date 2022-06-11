@@ -1,48 +1,33 @@
 package algorithms
 
 import (
-	"github.com/rbee3u/golib/stl/iterators"
-	"github.com/rbee3u/golib/stl/types"
+	"github.com/rbee3u/golib/stl/constraints"
 )
 
-func MinElement(
-	first, last iterators.ForwardIterator, less types.BinaryPredicate,
-) iterators.ForwardIterator {
-	if first.Equal(last) {
-		return last
-	}
-
-	smallest := first
-	first = first.Next().(iterators.ForwardIterator)
-
-	for !first.Equal(last) {
-		if less(first.Read(), smallest.Read()) {
-			smallest = first
-		}
-
-		first = first.Next().(iterators.ForwardIterator)
-	}
-
-	return smallest
+func Smallest[S constraints.ForwardIterator[S, T], T constraints.LessThanComparable[T]](
+	first S, last S,
+) S {
+	return Best(first, last, func(x T, y T) bool { return x.Less(y) })
 }
 
-func MaxElement(
-	first, last iterators.ForwardIterator, less types.BinaryPredicate,
-) iterators.ForwardIterator {
-	if first.Equal(last) {
-		return last
-	}
+func Largest[S constraints.ForwardIterator[S, T], T constraints.LessThanComparable[T]](
+	first S, last S,
+) S {
+	return Best(first, last, func(x T, y T) bool { return y.Less(x) })
+}
 
-	largest := first
-	first = first.Next().(iterators.ForwardIterator)
+func Best[S constraints.ForwardIterator[S, T], T any](
+	first S, last S, better func(T, T) bool,
+) S {
+	best := first
 
-	for !first.Equal(last) {
-		if less(largest.Read(), first.Read()) {
-			largest = first
+	if !first.Equal(last) {
+		for first = first.Next(); !first.Equal(last); first = first.Next() {
+			if better(first.Read(), best.Read()) {
+				best = first
+			}
 		}
-
-		first = first.Next().(iterators.ForwardIterator)
 	}
 
-	return largest
+	return best
 }

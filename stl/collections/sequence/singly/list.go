@@ -1,72 +1,66 @@
 package singly
 
-import (
-	"github.com/rbee3u/golib/stl/types"
-)
-
-type List struct {
-	sentinel node
-	size     types.Size
+type List[T any] struct {
+	sentinel node[T]
+	size     int
 }
 
-type node struct {
-	next *node
-	data types.Data
+type node[T any] struct {
+	next *node[T]
+	data T
 }
 
-func NewList() *List {
-	l := &List{}
-
-	return l
+func NewList[T any]() *List[T] {
+	return &List[T]{}
 }
 
-func (l *List) Size() types.Size {
+func (l *List[T]) Size() int {
 	return l.size
 }
 
-func (l *List) Empty() bool {
+func (l *List[T]) Empty() bool {
 	return l.Size() == 0
 }
 
-func (l *List) PushFront(data types.Data) {
+func (l *List[T]) PushFront(data T) {
 	s := &l.sentinel
-	s.next = &node{next: s.next, data: data}
+	s.next = &node[T]{next: s.next, data: data}
 	l.size++
 }
 
-func (l *List) Front() types.Data {
+func (l *List[T]) Front() T {
 	return l.sentinel.next.data
 }
 
-func (l *List) PopFront() {
+func (l *List[T]) PopFront() {
 	s := &l.sentinel
 	s.next = s.next.next
 	l.size--
 }
 
-func (l *List) Clear() {
+func (l *List[T]) Clear() {
 	l.sentinel.next = nil
 	l.size = 0
 }
 
-func (l *List) Begin() Iterator {
-	return Iterator{n: l.sentinel.next}
+func (l *List[T]) Begin() Iterator[T] {
+	return Iterator[T]{n: l.sentinel.next}
 }
 
-func (l *List) End() Iterator {
-	return Iterator{}
+func (l *List[T]) End() Iterator[T] {
+	return Iterator[T]{}
 }
 
-func (l *List) InsertAfter(i Iterator, data types.Data) Iterator {
-	i.n.next = &node{next: i.n.next, data: data}
+func (l *List[T]) InsertAfter(i Iterator[T], data T) Iterator[T] {
+	i.n.next = &node[T]{next: i.n.next, data: data}
 	l.size++
 
-	return Iterator{n: i.n.next}
+	return Iterator[T]{n: i.n.next}
 }
 
-func (l *List) EraseAfter(i Iterator) Iterator {
+func (l *List[T]) EraseAfter(i Iterator[T]) Iterator[T] {
 	i.n.next = i.n.next.next
 	l.size--
 
-	return Iterator{n: i.n.next}
+	return Iterator[T]{n: i.n.next}
 }

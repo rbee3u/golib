@@ -2,14 +2,13 @@ package initial_test
 
 import (
 	"github.com/rbee3u/golib/stl/collections/sequence/initial"
-	"github.com/rbee3u/golib/stl/types"
 )
 
-func newList(datas ...types.Data) *initial.List {
-	return initial.NewList(datas...)
+func newList(items ...int) *initial.List[int] {
+	return initial.NewList(items...)
 }
 
-func newIterator() initial.Iterator {
+func newIterator() initial.Iterator[int] {
 	l := newList(0)
 	return l.Begin()
 }

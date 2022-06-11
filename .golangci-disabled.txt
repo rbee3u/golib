@@ -1,7 +1,0 @@
-exhaustivestruct
-forcetypeassert
-golint
-gomnd
-interfacer
-maligned
-scopelint

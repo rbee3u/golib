@@ -1,29 +1,25 @@
 package initial
 
-import (
-	"github.com/rbee3u/golib/stl/types"
-)
-
-type List struct {
-	slice []types.Data
+type List[T any] struct {
+	items []T
 }
 
-func NewList(datas ...types.Data) *List {
-	return &List{slice: datas}
+func NewList[T any](items ...T) *List[T] {
+	return &List[T]{items: items}
 }
 
-func (l *List) Size() types.Size {
-	return len(l.slice)
+func (l *List[T]) Size() int {
+	return len(l.items)
 }
 
-func (l *List) Empty() bool {
+func (l *List[T]) Empty() bool {
 	return l.Size() == 0
 }
 
-func (l *List) Begin() Iterator {
-	return Iterator{l: l, n: 0}
+func (l *List[T]) Begin() Iterator[T] {
+	return Iterator[T]{l: l, n: 0}
 }
 
-func (l *List) End() Iterator {
-	return Iterator{l: l, n: len(l.slice)}
+func (l *List[T]) End() Iterator[T] {
+	return Iterator[T]{l: l, n: len(l.items)}
 }

@@ -1,108 +1,74 @@
 package algorithms
 
 import (
-	"github.com/rbee3u/golib/stl/iterators"
-	"github.com/rbee3u/golib/stl/types"
+	"github.com/rbee3u/golib/stl/constraints"
 )
 
-func AllOf(first, last iterators.InputIterator, pred types.UnaryPredicate) bool {
-	for !first.Equal(last) {
+func AllOf[S constraints.InputIterator[S, T], T any](
+	first S, last S, pred func(T) bool,
+) bool {
+	for ; !first.Equal(last); first = first.Next() {
 		if !pred(first.Read()) {
 			return false
 		}
-
-		first = first.Next().(iterators.InputIterator)
 	}
 
 	return true
 }
 
-func AnyOf(first, last iterators.InputIterator, pred types.UnaryPredicate) bool {
-	for !first.Equal(last) {
+func AnyOf[S constraints.InputIterator[S, T], T any](
+	first S, last S, pred func(T) bool,
+) bool {
+	for ; !first.Equal(last); first = first.Next() {
 		if pred(first.Read()) {
 			return true
 		}
-
-		first = first.Next().(iterators.InputIterator)
 	}
 
 	return false
 }
 
-func NoneOf(first, last iterators.InputIterator, pred types.UnaryPredicate) bool {
-	for !first.Equal(last) {
-		if pred(first.Read()) {
-			return false
-		}
-
-		first = first.Next().(iterators.InputIterator)
-	}
-
-	return true
-}
-
-func ForEach(first, last iterators.InputIterator, fn types.UnaryPredicate) {
-	for !first.Equal(last) {
+func ForEach[S constraints.InputIterator[S, T], T any](
+	first S, last S, fn func(T),
+) {
+	for ; !first.Equal(last); first = first.Next() {
 		fn(first.Read())
-		first = first.Next().(iterators.InputIterator)
 	}
 }
 
-func Find(first, last iterators.InputIterator, val types.Data) iterators.InputIterator {
-	for !first.Equal(last) {
-		if first.Read() == val {
-			return first
-		}
-
-		first = first.Next().(iterators.InputIterator)
-	}
-
-	return last
+func Find[S constraints.InputIterator[S, T], T constraints.EqualityComparable[T]](
+	first S, last S, target T,
+) S {
+	return FindIf(first, last, func(x T) bool { return x.Equal(target) })
 }
 
-func FindIf(first, last iterators.InputIterator, pred types.UnaryPredicate) iterators.InputIterator {
-	for !first.Equal(last) {
+func FindIf[S constraints.InputIterator[S, T], T any](
+	first S, last S, pred func(T) bool,
+) S {
+	for ; !first.Equal(last); first = first.Next() {
 		if pred(first.Read()) {
 			return first
 		}
-
-		first = first.Next().(iterators.InputIterator)
 	}
 
 	return last
 }
 
-func FindIfNot(first, last iterators.InputIterator, pred types.UnaryPredicate) iterators.InputIterator {
-	for !first.Equal(last) {
-		if !pred(first.Read()) {
-			return first
-		}
-
-		first = first.Next().(iterators.InputIterator)
-	}
-
-	return last
+func Count[S constraints.InputIterator[S, T], T constraints.EqualityComparable[T]](
+	first S, last S, target T,
+) int {
+	return CountIf(first, last, func(x T) bool { return x.Equal(target) })
 }
 
-func Count(first, last iterators.InputIterator, val types.Data) (count types.Size) {
-	for !first.Equal(last) {
-		if first.Read() == val {
-			count++
-		}
+func CountIf[S constraints.InputIterator[S, T], T any](
+	first S, last S, pred func(T) bool,
+) int {
+	var count int
 
-		first = first.Next().(iterators.InputIterator)
-	}
-
-	return count
-}
-
-func CountIf(first, last iterators.InputIterator, pred types.UnaryPredicate) (count types.Size) {
-	for !first.Equal(last) {
+	for ; !first.Equal(last); first = first.Next() {
 		if pred(first.Read()) {
 			count++
 		}
-
-		first = first.Next().(iterators.InputIterator)
 	}
 
 	return count

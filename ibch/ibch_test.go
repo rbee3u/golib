@@ -7,7 +7,7 @@ import (
 )
 
 func BenchmarkIBCh(b *testing.B) {
-	ibCh := ibch.New()
+	ibCh := ibch.New[int]()
 	defer ibCh.Close()
 
 	b.RunParallel(func(pb *testing.PB) {

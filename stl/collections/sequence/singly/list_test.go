@@ -128,7 +128,7 @@ func BenchmarkList_Begin(b *testing.B) {
 func TestList_End(t *testing.T) {
 	l := newList()
 	l.PushFront(1)
-	end := l.Begin().ImplNext()
+	end := l.Begin().Next()
 	assert.True(t, l.End().Equal(end))
 }
 
