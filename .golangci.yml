@@ -1,17 +1,18 @@
 linters:
   disable-all: true
   enable:
+    - asasalint
     - asciicheck
     - bidichk
     - bodyclose
     - containedctx
     - contextcheck
     - cyclop
-    - deadcode
     - decorder
     - depguard
     - dogsled
     - dupl
+    - dupword
     - durationcheck
     - errcheck
     - errchkjson
@@ -46,11 +47,12 @@ linters:
     - gosimple
     - govet
     - grouper
-    - ifshort
     - importas
     - ineffassign
+    - interfacebloat
     - ireturn
     - lll
+    - loggercheck
     - maintidx
     - makezero
     - misspell
@@ -67,14 +69,15 @@ linters:
     - prealloc
     - predeclared
     - promlinter
+    - reassign
     - revive
     - rowserrcheck
     - sqlclosecheck
     - staticcheck
-    - structcheck
     - stylecheck
     - tagliatelle
     - tenv
+    - testableexamples
     - testpackage
     - thelper
     - tparallel
@@ -82,7 +85,7 @@ linters:
     - unconvert
     - unparam
     - unused
-    - varcheck
+    - usestdlibvars
     - varnamelen
     - wastedassign
     - whitespace
@@ -104,6 +107,3 @@ issues:
         - ireturn
         - nestif
         - varnamelen
-    - linters:
-        - revive
-      text: "receiver-naming:"

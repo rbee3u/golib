@@ -14,20 +14,20 @@ import (
 func TestMemo(t *testing.T) {
 	fc := newFakeClock()
 	g := &generator{r: rand.New(rand.NewSource(142857677367)), mk: 100, mv: 1000000000}
-	m := memo.New(memo.WithClock(fc), memo.WithLoader(nil), memo.WithExpiration(0))
-	c := &competitor{clock: fc, dict: make(map[memo.Key]*entry)}
+	m := memo.New(memo.WithClock[int, int](fc), memo.WithLoader[int, int](nil), memo.WithExpiration[int, int](0))
+	c := &competitor{clock: fc, dict: make(map[int]*entry)}
 
 	for i := 0; i < 100000; i++ {
 		fc.advance(time.Second)
 		switch op := g.next().(type) {
 		case opGet:
-			var loader memo.Loader
+			var loader func(int) (int, error)
 			if op.v != 0 || op.err != nil {
-				loader = func(_ memo.Key) (memo.Value, error) {
+				loader = func(_ int) (int, error) {
 					return op.v, op.err
 				}
 			}
-			v1, err1 := m.Get(op.k, memo.GetWithLoader(loader), memo.GetWithExpiration(op.expiration))
+			v1, err1 := m.Get(op.k, memo.GetWithLoader(loader), memo.GetWithExpiration[int, int](op.expiration))
 			v2, err2 := c.get(op.k, loader, op.expiration)
 			if v1 != v2 {
 				t.Errorf("got: %v, want: %v", v1, v2)
@@ -36,7 +36,7 @@ func TestMemo(t *testing.T) {
 				t.Errorf("got: %v, want: %v", err1, err2)
 			}
 		case opSet:
-			m.Set(op.k, op.v, memo.SetWithExpiration(op.expiration))
+			m.Set(op.k, op.v, memo.SetWithExpiration[int, int](op.expiration))
 			c.set(op.k, op.v, op.expiration)
 		case opDel:
 			m.Del(op.k)
@@ -51,13 +51,13 @@ func TestInvalidExpiration(t *testing.T) {
 		exec func()
 	}{
 		{name: "New", exec: func() {
-			_ = memo.New(memo.WithExpiration(-1))
+			_ = memo.New(memo.WithExpiration[int, int](-1))
 		}},
 		{name: "Get", exec: func() {
-			_, _ = memo.New().Get(0, memo.GetWithExpiration(-1))
+			_, _ = memo.New[int, int]().Get(0, memo.GetWithExpiration[int, int](-1))
 		}},
 		{name: "Set", exec: func() {
-			memo.New().Set(0, 0, memo.SetWithExpiration(-1))
+			memo.New[int, int]().Set(0, 0, memo.SetWithExpiration[int, int](-1))
 		}},
 	}
 
@@ -76,7 +76,7 @@ func TestInvalidExpiration(t *testing.T) {
 
 func BenchmarkMemo_Get(b *testing.B) {
 	b.Run("FastPath", func(b *testing.B) {
-		m := memo.New()
+		m := memo.New[string, string]()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
 				_, _ = m.Get("k")
@@ -85,12 +85,12 @@ func BenchmarkMemo_Get(b *testing.B) {
 	})
 
 	b.Run("SlowPath", func(b *testing.B) {
-		loader := func(_ memo.Key) (memo.Value, error) {
+		loader := func(_ string) (string, error) {
 			return "v", nil
 		}
 		m := memo.New(
 			memo.WithLoader(loader),
-			memo.WithExpiration(time.Nanosecond),
+			memo.WithExpiration[string, string](time.Nanosecond),
 		)
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
@@ -101,7 +101,7 @@ func BenchmarkMemo_Get(b *testing.B) {
 }
 
 func BenchmarkMemo_Set(b *testing.B) {
-	m := memo.New()
+	m := memo.New[string, string]()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			m.Set("k", "v")
@@ -110,7 +110,7 @@ func BenchmarkMemo_Set(b *testing.B) {
 }
 
 func BenchmarkMemo_Del(b *testing.B) {
-	m := memo.New()
+	m := memo.New[string, string]()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			m.Del("k")
@@ -209,16 +209,16 @@ func (g *generator) opDel() (op opDel) {
 
 type competitor struct {
 	clock memo.Clock
-	dict  map[memo.Key]*entry
+	dict  map[int]*entry
 }
 
 type entry struct {
-	value    memo.Value
+	value    int
 	err      error
 	expireAt int64
 }
 
-func (c *competitor) get(k memo.Key, loader memo.Loader, expiration time.Duration) (memo.Value, error) {
+func (c *competitor) get(k int, loader func(int) (int, error), expiration time.Duration) (int, error) {
 	now := c.clock.Now()
 
 	e := c.dict[k]
@@ -227,7 +227,7 @@ func (c *competitor) get(k memo.Key, loader memo.Loader, expiration time.Duratio
 	}
 
 	if loader == nil {
-		return nil, memo.ErrNotFound
+		return 0, memo.ErrNotFound
 	}
 
 	e = &entry{}
@@ -239,7 +239,7 @@ func (c *competitor) get(k memo.Key, loader memo.Loader, expiration time.Duratio
 	return e.value, e.err
 }
 
-func (c *competitor) set(k memo.Key, v memo.Value, expiration time.Duration) {
+func (c *competitor) set(k int, v int, expiration time.Duration) {
 	now := c.clock.Now()
 
 	e := c.dict[k]
@@ -255,6 +255,6 @@ func (c *competitor) set(k memo.Key, v memo.Value, expiration time.Duration) {
 	}
 }
 
-func (c *competitor) del(k memo.Key) {
+func (c *competitor) del(k int) {
 	delete(c.dict, k)
 }

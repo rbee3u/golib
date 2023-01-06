@@ -8,15 +8,18 @@ import (
 // Memo is an in-memory k-v storage, which supports concurrently
 // get/set/delete k-v pairs. The most special place is that it
 // can load value if not found, and can set an expiration time.
-type Memo struct {
+type Memo[K comparable, V any] struct {
 	mu sync.Mutex
-	o  options
-	c  *cache
+	o  options[K, V]
+	c  *cache[K, V]
 }
 
 // New creates a memo with options.
-func New(opts ...Option) *Memo {
-	return &Memo{o: newOptions(opts...), c: newCache()}
+func New[K comparable, V any](opts ...Option[K, V]) *Memo[K, V] {
+	return &Memo[K, V]{
+		o: newOptions[K, V](opts...),
+		c: newCache[K, V](),
+	}
 }
 
 // Get returns the associated value of the key.
@@ -24,7 +27,7 @@ func New(opts ...Option) *Memo {
 // the loader will be invoked to get a new value.
 // If a new value is loaded and an expiration option is provided,
 // the expiration option will act on the new value.
-func (m *Memo) Get(k Key, opts ...GetOption) (Value, error) {
+func (m *Memo[K, V]) Get(k K, opts ...GetOption[K, V]) (V, error) {
 	o := m.o.newGetOptions(opts...)
 	now := m.o.clock.Now()
 
@@ -48,12 +51,14 @@ func (m *Memo) Get(k Key, opts ...GetOption) (Value, error) {
 	if o.loader == nil {
 		m.mu.Unlock()
 
-		return nil, ErrNotFound
+		var zero V
+
+		return zero, ErrNotFound
 	}
 
-	e = newEntry()
+	e = newEntry[V]()
 	m.c.dictSet(k, e)
-	m.c.heapPush(node{key: k, expireAt: expireAt})
+	m.c.heapPush(node[K]{key: k, expireAt: expireAt})
 
 	e.mu.Lock()
 	m.mu.Unlock()
@@ -66,7 +71,7 @@ func (m *Memo) Get(k Key, opts ...GetOption) (Value, error) {
 // Set inserts a key-value pair into the memo, if the key
 // already exists, update the associated value directly.
 // If an expiration is provided, it will act on the pair.
-func (m *Memo) Set(k Key, v Value, opts ...SetOption) {
+func (m *Memo[K, V]) Set(k K, v V, opts ...SetOption[K, V]) {
 	o := m.o.newSetOptions(opts...)
 	now := m.o.clock.Now()
 
@@ -80,16 +85,16 @@ func (m *Memo) Set(k Key, v Value, opts ...SetOption) {
 
 	e := m.c.dictGet(k)
 	if e == nil {
-		e = newEntry()
+		e = newEntry[V]()
 		e.value = v
 		m.c.dictSet(k, e)
-		m.c.heapPush(node{key: k, expireAt: expireAt})
+		m.c.heapPush(node[K]{key: k, expireAt: expireAt})
 		m.mu.Unlock()
 
 		return
 	}
 
-	m.c.heapFix(e.position, node{key: k, expireAt: expireAt})
+	m.c.heapFix(e.position, node[K]{key: k, expireAt: expireAt})
 
 	m.mu.Unlock()
 	e.mu.Lock()
@@ -98,7 +103,7 @@ func (m *Memo) Set(k Key, v Value, opts ...SetOption) {
 }
 
 // Del removes the key-value pair from the memo.
-func (m *Memo) Del(k Key) {
+func (m *Memo[K, V]) Del(k K) {
 	now := m.o.clock.Now()
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -113,7 +118,7 @@ func (m *Memo) Del(k Key) {
 	m.c.dictDel(k)
 }
 
-func (m *Memo) cleanup(now int64) {
+func (m *Memo[K, V]) cleanup(now int64) {
 	for !m.c.heapEmpty() {
 		top := m.c.heapTop()
 		if top.expireAt > now {
@@ -126,76 +131,76 @@ func (m *Memo) cleanup(now int64) {
 }
 
 // cache is the actual storage layer of memo.
-type cache struct {
-	// A dict supports lookup value by key fastly.
-	dict map[Key]*entry
+type cache[K comparable, V any] struct {
+	// A dict supports lookup value by key quickly.
+	dict map[K]*entry[V]
 	// A heap to hold all expiration time of keys.
-	heap []node
+	heap []node[K]
 	// The size of the heap.
 	heapSize int
 }
 
-func newCache() *cache {
-	return &cache{dict: make(map[Key]*entry)}
+func newCache[K comparable, V any]() *cache[K, V] {
+	return &cache[K, V]{dict: make(map[K]*entry[V])}
 }
 
 const zeroPosition = -1
 
-type entry struct {
+type entry[V any] struct {
 	mu       sync.Mutex
 	position int
-	value    Value
+	value    V
 	err      error
 }
 
-func newEntry() *entry {
-	return &entry{position: zeroPosition}
+func newEntry[V any]() *entry[V] {
+	return &entry[V]{position: zeroPosition}
 }
 
 const zeroExpireAt = 0
 
-type node struct {
-	key      Key
+type node[K comparable] struct {
+	key      K
 	expireAt int64
 }
 
-func newNode() node {
-	return node{}
+func newNode[K comparable]() node[K] {
+	return node[K]{}
 }
 
-func (c *cache) dictGet(k Key) *entry {
+func (c *cache[K, V]) dictGet(k K) *entry[V] {
 	return c.dict[k]
 }
 
-func (c *cache) dictSet(k Key, e *entry) {
+func (c *cache[K, V]) dictSet(k K, e *entry[V]) {
 	c.dict[k] = e
 }
 
-func (c *cache) dictDel(k Key) {
+func (c *cache[K, V]) dictDel(k K) {
 	delete(c.dict, k)
 }
 
-func (c *cache) heapEmpty() bool {
+func (c *cache[K, V]) heapEmpty() bool {
 	return c.heapSize == 0
 }
 
-func (c *cache) heapTop() node {
+func (c *cache[K, V]) heapTop() node[K] {
 	return c.heap[0]
 }
 
-func (c *cache) heapPop() {
+func (c *cache[K, V]) heapPop() {
 	heap.Pop(c)
 }
 
-func (c *cache) heapPush(n node) {
+func (c *cache[K, V]) heapPush(n node[K]) {
 	c.heapFix(zeroPosition, n)
 }
 
-func (c *cache) heapRemove(i int) {
-	c.heapFix(i, node{})
+func (c *cache[K, V]) heapRemove(i int) {
+	c.heapFix(i, node[K]{})
 }
 
-func (c *cache) heapFix(i int, n node) {
+func (c *cache[K, V]) heapFix(i int, n node[K]) {
 	switch {
 	case i == zeroPosition && n.expireAt != zeroExpireAt:
 		heap.Push(c, n)
@@ -207,15 +212,15 @@ func (c *cache) heapFix(i int, n node) {
 	}
 }
 
-func (c *cache) Len() int {
+func (c *cache[K, V]) Len() int {
 	return c.heapSize
 }
 
-func (c *cache) Less(i, j int) bool {
+func (c *cache[K, V]) Less(i, j int) bool {
 	return c.heap[i].expireAt < c.heap[j].expireAt
 }
 
-func (c *cache) Swap(i, j int) {
+func (c *cache[K, V]) Swap(i, j int) {
 	if i != j {
 		c.heap[i], c.heap[j] = c.heap[j], c.heap[i]
 		c.dict[c.heap[i].key].position = i
@@ -223,17 +228,17 @@ func (c *cache) Swap(i, j int) {
 	}
 }
 
-func (c *cache) Push(n interface{}) {
+func (c *cache[K, V]) Push(n interface{}) {
 	if c.heapSize == len(c.heap) {
-		c.heap = append(c.heap, newNode())
+		c.heap = append(c.heap, newNode[K]())
 	}
 
-	c.heap[c.heapSize] = n.(node)
+	c.heap[c.heapSize] = n.(node[K])
 	c.dict[c.heap[c.heapSize].key].position = c.heapSize
 	c.heapSize++
 }
 
-func (c *cache) Pop() interface{} {
+func (c *cache[K, V]) Pop() interface{} {
 	c.heapSize--
 	c.dict[c.heap[c.heapSize].key].position = zeroPosition
 

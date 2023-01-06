@@ -1,8 +1,8 @@
 package memo_test
 
 import (
+	"errors"
 	"fmt"
-	"reflect"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -11,7 +11,7 @@ import (
 )
 
 func ExampleSimple() {
-	m := memo.New()
+	m := memo.New[string, int]()
 	m.Set("x", 1)
 	fmt.Println(m.Get("x"))
 	m.Del("x")
@@ -26,12 +26,12 @@ func ExampleLoader() {
 	fmt.Println("Scene: default loader only")
 	m := memo.New(memo.WithLoader(length))
 	fmt.Println(m.Get("x"))
-	fmt.Println(m.Get(233))
+	fmt.Println(m.Get("error"))
 
 	fmt.Println("Scene: get loader only")
-	m = memo.New()
+	m = memo.New[string, int]()
 	fmt.Println(m.Get("x", memo.GetWithLoader(length)))
-	fmt.Println(m.Get(233, memo.GetWithLoader(length)))
+	fmt.Println(m.Get("error", memo.GetWithLoader(length)))
 
 	fmt.Println("Scene: get loader overwrites default loader")
 	m = memo.New(memo.WithLoader(length))
@@ -40,10 +40,10 @@ func ExampleLoader() {
 	// Output:
 	// Scene: default loader only
 	// 1 <nil>
-	// <nil> reflect: call of reflect.Value.Len on int Value
+	// <nil> error
 	// Scene: get loader only
 	// 1 <nil>
-	// <nil> reflect: call of reflect.Value.Len on int Value
+	// <nil> error
 	// Scene: get loader overwrites default loader
 	// 2 <nil>
 }
@@ -55,22 +55,22 @@ func ExampleExpiration() {
 	)
 
 	fmt.Println("Scene: default expiration only")
-	m := memo.New(memo.WithExpiration(expiration))
+	m := memo.New(memo.WithExpiration[string, int](expiration))
 	m.Set("x", 1)
 	fmt.Println(m.Get("x"))
 	time.Sleep(expiration)
 	fmt.Println(m.Get("x"))
 
 	fmt.Println("Scene: set expiration only")
-	m = memo.New()
-	m.Set("x", 1, memo.SetWithExpiration(expiration))
+	m = memo.New[string, int]()
+	m.Set("x", 1, memo.SetWithExpiration[string, int](expiration))
 	fmt.Println(m.Get("x"))
 	time.Sleep(expiration)
 	fmt.Println(m.Get("x"))
 
 	fmt.Println("Scene: set expiration overwrites default expiration")
-	m = memo.New(memo.WithExpiration(expiration))
-	m.Set("x", 1, memo.SetWithExpiration(doubleExpiration))
+	m = memo.New(memo.WithExpiration[string, int](expiration))
+	m.Set("x", 1, memo.SetWithExpiration[string, int](doubleExpiration))
 	fmt.Println(m.Get("x"))
 	time.Sleep(expiration)
 	fmt.Println(m.Get("x"))
@@ -93,7 +93,7 @@ func ExampleExpiration() {
 func ExampleLoaderAndExpiration() {
 	const expiration = 30 * time.Millisecond
 
-	m := memo.New(memo.WithExpiration(expiration))
+	m := memo.New(memo.WithExpiration[string, int](expiration))
 	fmt.Println(m.Get("x", memo.GetWithLoader(length)))
 	time.Sleep(expiration)
 	fmt.Println(m.Get("x"))
@@ -106,7 +106,7 @@ func ExampleLoaderAndExpiration() {
 func ExampleConcurrency() {
 	var counter int32
 
-	wrappedLoader := func(k memo.Key) (memo.Value, error) {
+	wrappedLoader := func(k string) (int, error) {
 		atomic.AddInt32(&counter, 1)
 		return slowLength(k)
 	}
@@ -132,25 +132,21 @@ func ExampleConcurrency() {
 	// counter: 1
 }
 
-func length(k memo.Key) (memo.Value, error) {
-	switch v := reflect.ValueOf(k); v.Kind() {
-	case reflect.Array, reflect.Slice, reflect.String, reflect.Map, reflect.Chan:
-		return v.Len(), nil
-	default:
-		return nil, &reflect.ValueError{Method: "reflect.Value.Len", Kind: v.Kind()}
+func length(k string) (int, error) {
+	if k == "error" {
+		return 0, errors.New(k)
 	}
+
+	return len(k), nil
 }
 
-func doubleLength(k memo.Key) (memo.Value, error) {
-	switch v := reflect.ValueOf(k); v.Kind() {
-	case reflect.Array, reflect.Slice, reflect.String, reflect.Map, reflect.Chan:
-		return 2 * v.Len(), nil
-	default:
-		return nil, &reflect.ValueError{Method: "reflect.Value.Len", Kind: v.Kind()}
-	}
+func doubleLength(k string) (int, error) {
+	v, err := length(k)
+
+	return 2 * v, err
 }
 
-func slowLength(k memo.Key) (memo.Value, error) {
+func slowLength(k string) (int, error) {
 	time.Sleep(100 * time.Millisecond)
 
 	return length(k)

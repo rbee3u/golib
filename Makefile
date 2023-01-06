@@ -1,5 +1,5 @@
 test:
-	go test -v -cover -coverprofile=cover.out ./...
+	go test -v --count=1 -cover -coverprofile=cover.out ./...
 
 test_bloomfilter:
 	go test -v -cover -coverprofile=cover.out ./bloomfilter/...
@@ -35,4 +35,4 @@ lint:
 	golangci-lint run
 
 install-lint:
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.46.2
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.50.1

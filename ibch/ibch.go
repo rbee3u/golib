@@ -4,8 +4,8 @@ import (
 	"sync"
 )
 
-// An IBCh represents a channel with infinite buffer, which consists of a
-// sendCh and a recvCh, the sendCh for sending and the recvCh for receiving.
+// An IBCh represents a compound channel with infinite buffer, which consists of
+// a sendCh and a recvCh, the sendCh for sending and the recvCh for receiving.
 type IBCh[T any] struct {
 	// The sendCh is a channel which used to send data.
 	sendCh chan T
@@ -45,8 +45,8 @@ func (ibCh *IBCh[T]) loop() {
 
 	for {
 		if q.empty() {
-			data, unclosed := <-ibCh.sendCh
-			if !unclosed {
+			data, open := <-ibCh.sendCh
+			if !open {
 				goto exit
 			}
 
@@ -54,8 +54,8 @@ func (ibCh *IBCh[T]) loop() {
 		}
 
 		select {
-		case data, unclosed := <-ibCh.sendCh:
-			if !unclosed {
+		case data, open := <-ibCh.sendCh:
+			if !open {
 				goto exit
 			}
 
@@ -81,7 +81,9 @@ type queue[T any] struct {
 
 func newQueue[T any]() *queue[T] {
 	var q queue[T]
-	q.pool.New = func() any { return new(node[T]) }
+	q.pool.New = func() any {
+		return new(node[T])
+	}
 
 	return &q
 }

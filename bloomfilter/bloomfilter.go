@@ -142,11 +142,7 @@ func (bf *BloomFilter) ContainsWithoutLock(item []byte) bool {
 
 type bitset []uint
 
-const (
-	word32 = 32
-	word64 = 64
-	word   = word32 << (^uint(0) >> (word64 - 1))
-)
+const word = 32 << (^uint(0) >> 63)
 
 func newBitset(m uint64) bitset {
 	return make(bitset, (m+word-1)/word)
