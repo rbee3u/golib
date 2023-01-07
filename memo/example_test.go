@@ -19,7 +19,7 @@ func ExampleSimple() {
 
 	// Output:
 	// 1 <nil>
-	// <nil> memo: not found
+	// 0 memo: not found
 }
 
 func ExampleLoader() {
@@ -40,10 +40,10 @@ func ExampleLoader() {
 	// Output:
 	// Scene: default loader only
 	// 1 <nil>
-	// <nil> error
+	// 0 error
 	// Scene: get loader only
 	// 1 <nil>
-	// <nil> error
+	// 0 error
 	// Scene: get loader overwrites default loader
 	// 2 <nil>
 }
@@ -80,14 +80,14 @@ func ExampleExpiration() {
 	// Output:
 	// Scene: default expiration only
 	// 1 <nil>
-	// <nil> memo: not found
+	// 0 memo: not found
 	// Scene: set expiration only
 	// 1 <nil>
-	// <nil> memo: not found
+	// 0 memo: not found
 	// Scene: set expiration overwrites default expiration
 	// 1 <nil>
 	// 1 <nil>
-	// <nil> memo: not found
+	// 0 memo: not found
 }
 
 func ExampleLoaderAndExpiration() {
@@ -100,7 +100,7 @@ func ExampleLoaderAndExpiration() {
 
 	// Output:
 	// 1 <nil>
-	// <nil> memo: not found
+	// 0 memo: not found
 }
 
 func ExampleConcurrency() {
